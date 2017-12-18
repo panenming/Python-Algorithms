@@ -1,1 +1,1 @@
-# Python-Algorithms
+学习python，使用python完成基本的数据结构和算法。
