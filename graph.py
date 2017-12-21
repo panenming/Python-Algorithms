@@ -171,3 +171,71 @@ def parse_graph(s):
 print("强联通-----")
 G = parse_graph('bc/die/d/ah/f/g/eh/i/h')
 print(list(map(list, scc(G))))
+
+'''
+Bellman-Ford算法的一个重要作用：判断图中是否存在负权回路。
+'''
+#relaxtion
+inf = float('inf')
+def relax(W, u, v, D, P):
+    d = D.get(u,inf) + W[u][v]                  # Possible shortcut estimate
+    if d < D.get(v,inf):                        # Is it really a shortcut?
+        D[v], P[v] = d, u                       # Update estimate and parent
+        return True
+#Bellman-Ford算法
+def bellman_ford(G, s):
+    D, P = {s:0}, {}                            # Zero-dist to s; no parents
+    for rnd in G:                               # n = len(G) rounds
+        changed = False                         # No changes in round so far
+        for u in G:                             # For every from-node...
+            for v in G[u]:                      # ... and its to-nodes...
+                if relax(G, u, v, D, P):        # Shortcut to v from u?
+                    changed = True              # Yes! So something changed
+        if not changed: break                   # No change in round: Done
+    else:                                       # Not done before round n?
+        raise ValueError('negative cycle')      # Negative cycle detected
+    return D, P                                 # Otherwise: D and P correct
+
+#测试代码
+s, t, x, y, z = range(5)
+W = {
+    s: {t:6, y:7},
+    t: {x:5, y:8, z:-4},
+    x: {t:-2},
+    y: {x:-3, z:9},
+    z: {s:2, x:7}
+    }
+D, P = bellman_ford(W, s)
+print([D[v] for v in [s, t, x, y, z]]) # [0, 2, 4, 7, -2]
+print(s not in P) # True
+print([P[v] for v in [t, x, y, z]] == [x, y, s, t]) # True
+W[s][t] = -100
+print(bellman_ford(W, s))
+
+#Dijkstra算法
+from heapq import heappush, heappop
+
+def dijkstra(G, s):
+    D, P, Q, S = {s:0}, {}, [(0,s)], set()      # Est., tree, queue, visited
+    while Q:                                    # Still unprocessed nodes?
+        _, u = heappop(Q)                       # Node with lowest estimate
+        if u in S: continue                     # Already visited? Skip it
+        S.add(u)                                # We've visited it now
+        for v in G[u]:                          # Go through all its neighbors
+            relax(G, u, v, D, P)                # Relax the out-edge
+            heappush(Q, (D[v], v))              # Add to queue, w/est. as pri
+    return D, P                                 # Final D and P returned
+
+#测试代码
+s, t, x, y, z = range(5)
+W = {
+    s: {t:10, y:5},
+    t: {x:1, y:2},
+    x: {z:4},
+    y: {t:3, x:9, z:2},
+    z: {x:6, s:7}
+    }
+D, P = dijkstra(W, s)
+print([D[v] for v in [s, t, x, y, z]]) # [0, 8, 9, 5, 7]
+print(s not in P) # True
+print([P[v] for v in [t, x, y, z]] == [y, t, s, y])# True
